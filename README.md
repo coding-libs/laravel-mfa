@@ -25,7 +25,7 @@ $setup = MFA::setupTotp(auth()->user());
 // $setup['otpauth_url'] -> QR code; then verify
 $ok = MFA::verifyTotp(auth()->user(), '123456');
 
-// Generate QR code (base64 PNG) from existing TOTP
+// Generate QR code (base64 PNG) from existing TOTP (uses bacon/bacon-qr-code)
 $base64 = MFA::generateTotpQrCodeBase64(auth()->user(), issuer: 'MyApp');
 // <img src="$base64" />
 ```
