@@ -2,9 +2,7 @@
 Multi Factor Authentication
 CodingLibs Laravel MFA
 
-Compatibility
-- Laravel 11 and 12
-- PHP >= 8.2
+[![Packagist Version](https://img.shields.io/packagist/v/coding-libs/laravel-mfa.svg)](https://packagist.org/packages/coding-libs/laravel-mfa)
 
 Installation
 - Install via Composer from Packagist:
@@ -22,8 +20,8 @@ Packagist
 - `https://packagist.org/packages/coding-libs/laravel-mfa`
 
 Features
-- Email and SMS one-time code challenges with pluggable channels
-- Google Authenticator compatible TOTP (RFC 6238) setup and verification
+- **Email** and **SMS** one-time code challenges with pluggable channels
+- Google Authenticator compatible **TOTP** (RFC 6238) setup and verification
 - Built-in QR code generation to display TOTP provisioning URI (uses bacon/bacon-qr-code)
 - Remember device support via secure, hashed tokens stored in `mfa_remembered_devices`
 - Simple API via `MFA` facade/service for issuing and verifying codes
@@ -31,9 +29,13 @@ Features
 - Extendable channel system to add providers like WhatsApp, Twilio, etc.
 
 MFA Channels
-- Email: delivers a one-time code via Laravel Mail
-- SMS: delivers a one-time code via the configured SMS driver (defaults to `log`)
-- TOTP: time-based one-time password compatible with Google Authenticator and similar apps
+- **Email**: delivers a one-time code via Laravel Mail
+- **SMS**: delivers a one-time code via the configured SMS driver (defaults to `log`)
+- **TOTP**: time-based one-time password compatible with Google Authenticator and similar apps
+
+Compatibility
+- Laravel 11 and 12
+- PHP >= 8.2
 
 
 Usage
