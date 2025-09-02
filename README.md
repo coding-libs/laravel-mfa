@@ -2,7 +2,7 @@
 Multi Factor Authentication
 CodingLibs Laravel MFA
 
-[![Packagist Version](https://img.shields.io/packagist/v/coding-libs/laravel-mfa.svg)](https://packagist.org/packages/coding-libs/laravel-mfa)
+ 
 
 Installation
 - Install via Composer from Packagist:
@@ -16,8 +16,7 @@ php artisan vendor:publish --tag=mfa-migrations
 php artisan migrate
 ```
 
-Packagist
-- `https://packagist.org/packages/coding-libs/laravel-mfa`
+ 
 
 Features
 - **Email** and **SMS** one-time code challenges with pluggable channels
