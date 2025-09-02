@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('token_hash', 64);
             $table->string('device_name')->nullable();
+            $table->text('user_agent')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamp('expires_at');
             $table->timestamps();
