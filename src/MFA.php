@@ -183,6 +183,11 @@ class MFA
         }
 
         $record->last_used_at = $now;
+        // Optional: update the stored user agent when we see the device again
+        $request = app('request');
+        if ($request instanceof \Illuminate\Http\Request) {
+            $record->user_agent = (string) $request->userAgent();
+        }
         $record->save();
 
         return true;
@@ -205,6 +210,10 @@ class MFA
         $record->user_id = $user->getAuthIdentifier();
         $record->token_hash = $hash;
         $record->device_name = $deviceName;
+        $request = app('request');
+        if ($request instanceof \Illuminate\Http\Request) {
+            $record->user_agent = (string) $request->userAgent();
+        }
         $record->expires_at = $expiresAt;
         $record->last_used_at = Carbon::now();
         $record->save();
