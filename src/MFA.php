@@ -37,7 +37,7 @@ class MFA
     {
         $secret = GoogleTotp::generateSecret();
         $issuer = $issuer ?: Arr::get($this->config, 'totp.issuer', 'Laravel');
-        $label = $label ?: method_exists($user, 'getEmailForVerification') ? $user->getEmailForVerification() : ($user->email ?? (string) $user->getAuthIdentifier());
+        $label = $label ?: (method_exists($user, 'getEmailForVerification') ? $user->getEmailForVerification() : ($user->email ?? (string) $user->getAuthIdentifier()));
         $otpauth = GoogleTotp::buildOtpAuthUrl($secret, $label, $issuer, Arr::get($this->config, 'totp.digits', 6));
 
         $this->enableMethod($user, 'totp', ['secret' => $secret]);
