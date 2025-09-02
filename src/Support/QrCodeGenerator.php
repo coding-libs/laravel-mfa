@@ -22,7 +22,7 @@ class QrCodeGenerator
                 null,
                 null,
                 Fill::uniformColor(new Rgb(255, 255, 255), new Rgb(0, 0, 0)),
-                new SquareModule()
+                SquareModule::instance()
             ),
             self::selectImageBackEnd()
         );
