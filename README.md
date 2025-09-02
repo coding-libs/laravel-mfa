@@ -30,6 +30,12 @@ Features
 - Publishable config and migrations; encrypted storage of TOTP secret
 - Extendable channel system to add providers like WhatsApp, Twilio, etc.
 
+MFA Channels
+- Email: delivers a one-time code via Laravel Mail
+- SMS: delivers a one-time code via the configured SMS driver (defaults to `log`)
+- TOTP: time-based one-time password compatible with Google Authenticator and similar apps
+
+
 Usage
 ```php
 use CodingLibs\MFA\Facades\MFA;
@@ -57,6 +63,12 @@ $cookie = $result['cookie']; // Symfony Cookie instance — attach to response
 // Later, skip MFA if remembered device cookie is valid
 $shouldSkip = MFA::shouldSkipVerification(auth()->user(), MFA::getRememberTokenFromRequest(request()));
 ```
+
+Remember Devices (Optional)
+- Enable or configure in `config/mfa.php` under `remember` (or via env: see below)
+- On successful MFA, call `MFA::rememberDevice(...)` and attach the returned cookie to the response
+- On subsequent requests, use `MFA::shouldSkipVerification($user, MFA::getRememberTokenFromRequest($request))`
+- To revoke a remembered device, call `MFA::forgetRememberedDevice($user, $token)`
 
 Configuration
 - See `config/mfa.php` for all options. Key settings:
@@ -128,7 +140,11 @@ API Overview (Facade `MFA`)
   - **makeRememberCookie(string $token, ?int $lifetimeDays = null): Cookie**
   - **forgetRememberedDevice(Authenticatable $user, string $token): int**
 
-Extending: Custom Channels
+Creating a Custom MFA Channel
+Steps
+1. Implement `CodingLibs\MFA\Contracts\MfaChannel` with a unique `getName()` and a `send(...)` method
+2. Register your channel during app boot (e.g., in a service provider) via `MFA::registerChannel(...)`
+3. Issue a challenge using the new channel name: `MFA::issueChallenge($user, 'your-channel')`
 ```php
 use CodingLibs\MFA\Contracts\MfaChannel;
 use CodingLibs\MFA\Facades\MFA;
