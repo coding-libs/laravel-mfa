@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('mfa_methods', function (Blueprint $table) {
             $table->id();
             $table->string('user_type');
-            $table->string('user_id');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('method'); // email|sms|totp
             $table->text('secret')->nullable(); // for totp
             $table->timestamp('enabled_at')->nullable();
@@ -22,7 +22,7 @@ return new class extends Migration {
         Schema::create('mfa_challenges', function (Blueprint $table) {
             $table->id();
             $table->string('user_type');
-            $table->string('user_id');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('method'); // email|sms
             $table->string('code');
             $table->timestamp('expires_at');
