@@ -9,7 +9,7 @@ Compatibility
 Installation
 - Install via Composer from Packagist:
 ```
-composer require codinglibs/laravel-mfa
+composer require coding-libs/laravel-mfa
 ```
 - The service provider auto-registers. Publish config and migrations:
 ```
@@ -19,7 +19,7 @@ php artisan migrate
 ```
 
 Packagist
-- `https://packagist.org/packages/codinglibs/laravel-mfa`
+- `https://packagist.org/packages/coding-libs/laravel-mfa`
 
 Usage
 ```php

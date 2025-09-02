@@ -1,5 +1,5 @@
 {
-  "name": "codinglibs/laravel-mfa",
+  "name": "coding-libs/laravel-mfa",
   "description": "Laravel Multi-Factor Authentication package (Email, SMS, Google Authenticator TOTP)",
   "type": "library",
   "license": "MIT",
