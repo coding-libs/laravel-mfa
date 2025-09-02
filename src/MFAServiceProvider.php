@@ -27,8 +27,10 @@ class MFAServiceProvider extends ServiceProvider
 
         if (! class_exists('CreateMfaTables')) {
             $timestamp = date('Y_m_d_His');
+            $timestamp2 = date('Y_m_d_His', time() + 1);
             $this->publishes([
                 __DIR__ . '/../database/migrations/create_mfa_tables.php' => database_path("migrations/{$timestamp}_create_mfa_tables.php"),
+                __DIR__ . '/../database/migrations/create_mfa_remembered_devices_table.php' => database_path("migrations/{$timestamp2}_create_mfa_remembered_devices_table.php"),
             ], 'mfa-migrations');
         }
     }
