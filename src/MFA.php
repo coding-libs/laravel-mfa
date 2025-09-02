@@ -9,11 +9,15 @@ use CodingLibs\MFA\Contracts\MfaChannel;
 use CodingLibs\MFA\Support\QrCodeGenerator;
 use CodingLibs\MFA\Models\MfaChallenge;
 use CodingLibs\MFA\Models\MfaMethod;
+use CodingLibs\MFA\Models\MfaRememberedDevice;
 use CodingLibs\MFA\Totp\GoogleTotp;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Cookie;
 
 class MFA
 {
@@ -140,6 +144,100 @@ class MFA
         }
 
         return false;
+    }
+
+    public function isRememberEnabled(): bool
+    {
+        return (bool) Arr::get($this->config, 'remember.enabled', false);
+    }
+
+    public function getRememberCookieName(): string
+    {
+        return Arr::get($this->config, 'remember.cookie', 'mfa_rd');
+    }
+
+    public function getRememberTokenFromRequest(Request $request): ?string
+    {
+        $name = $this->getRememberCookieName();
+        $value = $request->cookies->get($name);
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public function shouldSkipVerification(Authenticatable $user, ?string $token): bool
+    {
+        if (! $this->isRememberEnabled() || ! $token) {
+            return false;
+        }
+
+        $hash = hash('sha256', $token);
+        $now = Carbon::now();
+        $record = MfaRememberedDevice::query()
+            ->where('user_type', get_class($user))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->where('token_hash', $hash)
+            ->where('expires_at', '>', $now)
+            ->first();
+
+        if (! $record) {
+            return false;
+        }
+
+        $record->last_used_at = $now;
+        $record->save();
+
+        return true;
+    }
+
+    public function rememberDevice(Authenticatable $user, ?int $lifetimeDays = null, ?string $deviceName = null): array
+    {
+        if (! $this->isRememberEnabled()) {
+            return ['token' => null, 'cookie' => null];
+        }
+
+        $days = $lifetimeDays ?? (int) Arr::get($this->config, 'remember.lifetime_days', 30);
+        $expiresAt = Carbon::now()->addDays($days);
+
+        $plainToken = bin2hex(random_bytes(32));
+        $hash = hash('sha256', $plainToken);
+
+        $record = new MfaRememberedDevice();
+        $record->user_type = get_class($user);
+        $record->user_id = $user->getAuthIdentifier();
+        $record->token_hash = $hash;
+        $record->device_name = $deviceName;
+        $record->expires_at = $expiresAt;
+        $record->last_used_at = Carbon::now();
+        $record->save();
+
+        $cookie = $this->makeRememberCookie($plainToken, $days);
+
+        return ['token' => $plainToken, 'cookie' => $cookie];
+    }
+
+    public function makeRememberCookie(string $token, ?int $lifetimeDays = null): Cookie
+    {
+        $days = $lifetimeDays ?? (int) Arr::get($this->config, 'remember.lifetime_days', 30);
+        $name = $this->getRememberCookieName();
+        $path = Arr::get($this->config, 'remember.path', '/');
+        $domain = Arr::get($this->config, 'remember.domain');
+        $secureConfig = Arr::get($this->config, 'remember.secure');
+        $secure = $secureConfig === null ? app('request')->isSecure() : (bool) $secureConfig;
+        $httpOnly = (bool) Arr::get($this->config, 'remember.http_only', true);
+        $sameSite = Arr::get($this->config, 'remember.same_site', 'lax');
+
+        $expires = Carbon::now()->addDays($days);
+
+        return new Cookie($name, $token, $expires, $path, $domain, $secure, $httpOnly, false, $sameSite);
+    }
+
+    public function forgetRememberedDevice(Authenticatable $user, string $token): int
+    {
+        $hash = hash('sha256', $token);
+        return MfaRememberedDevice::query()
+            ->where('user_type', get_class($user))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->where('token_hash', $hash)
+            ->delete();
     }
 
     public function enableMethod(Authenticatable $user, string $method, array $attributes = []): MfaMethod
