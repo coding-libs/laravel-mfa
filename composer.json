@@ -1,0 +1,44 @@
+{
+  "name": "codinglibs/laravel-mfa",
+  "description": "Laravel 12 Multi-Factor Authentication package (Email, SMS, Google Authenticator TOTP)",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "CodingLibs",
+      "email": "support@codinglibs.example"
+    }
+  ],
+  "require": {
+    "php": ">=8.2",
+    "illuminate/support": "^12.0",
+    "illuminate/database": "^12.0",
+    "illuminate/mail": "^12.0",
+    "illuminate/config": "^12.0",
+    "illuminate/console": "^12.0",
+    "bacon/bacon-qr-code": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "CodingLibs\\MFA\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "CodingLibs\\MFA\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "CodingLibs\\MFA\\MFAServiceProvider"
+      ],
+      "aliases": {
+        "MFA": "CodingLibs\\MFA\\Facades\\MFA"
+      }
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
+
