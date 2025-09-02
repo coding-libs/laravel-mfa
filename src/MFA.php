@@ -15,8 +15,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Cookie;
 
 class MFA
@@ -183,10 +181,11 @@ class MFA
         }
 
         $record->last_used_at = $now;
-        // Optional: update the stored user agent when we see the device again
+        // Optional: update the stored user agent and IP when we see the device again
         $request = app('request');
         if ($request instanceof \Illuminate\Http\Request) {
             $record->user_agent = (string) $request->userAgent();
+            $record->ip_address = (string) $request->ip();
         }
         $record->save();
 
@@ -213,6 +212,7 @@ class MFA
         $request = app('request');
         if ($request instanceof \Illuminate\Http\Request) {
             $record->user_agent = (string) $request->userAgent();
+            $record->ip_address = (string) $request->ip();
         }
         $record->expires_at = $expiresAt;
         $record->last_used_at = Carbon::now();
