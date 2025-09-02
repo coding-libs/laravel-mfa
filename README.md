@@ -2,6 +2,10 @@
 Multi Factor Authentication
 CodingLibs Laravel MFA
 
+Compatibility
+- Laravel 11 and 12
+- PHP >= 8.2
+
 Installation
 - Install via Composer from Packagist:
 ```
