@@ -3,13 +3,19 @@ Multi Factor Authentication
 CodingLibs Laravel MFA
 
 Installation
-- Require in your Laravel 12 app composer.json or via path repository.
+- Install via Composer from Packagist:
+```
+composer require codinglibs/laravel-mfa
+```
 - The service provider auto-registers. Publish config and migrations:
 ```
 php artisan vendor:publish --tag=mfa-config
 php artisan vendor:publish --tag=mfa-migrations
 php artisan migrate
 ```
+
+Packagist
+- `https://packagist.org/packages/codinglibs/laravel-mfa`
 
 Usage
 ```php
