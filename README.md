@@ -24,7 +24,32 @@ $ok = MFA::verifyChallenge(auth()->user(), 'email', '123456');
 $setup = MFA::setupTotp(auth()->user());
 // $setup['otpauth_url'] -> QR code; then verify
 $ok = MFA::verifyTotp(auth()->user(), '123456');
+
+// Generate QR code (base64 PNG) from existing TOTP
+$base64 = MFA::generateTotpQrCodeBase64(auth()->user(), issuer: 'MyApp');
+// <img src="$base64" />
 ```
 
 Configuration
 - See `config/mfa.php` for email/sms/totp options.
+
+Extending: Custom Channels
+```php
+use CodingLibs\MFA\Contracts\MfaChannel;
+use CodingLibs\MFA\Facades\MFA;
+use Illuminate\Contracts\Auth\Authenticatable;
+
+class WhatsAppChannel implements MfaChannel {
+    public function __construct(private array $config = []) {}
+    public function getName(): string { return 'whatsapp'; }
+    public function send(Authenticatable $user, string $code, array $options = []): void {
+        // send via provider...
+    }
+}
+
+// register at boot
+MFA::registerChannel(new WhatsAppChannel(config('mfa.whatsapp', [])));
+
+// then issue
+MFA::issueChallenge(auth()->user(), 'whatsapp');
+```

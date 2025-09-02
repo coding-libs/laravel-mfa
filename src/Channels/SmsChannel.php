@@ -2,16 +2,22 @@
 
 namespace CodingLibs\MFA\Channels;
 
+use CodingLibs\MFA\Contracts\MfaChannel;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Log;
 
-class SmsChannel
+class SmsChannel implements MfaChannel
 {
     public function __construct(protected array $config = [])
     {
     }
 
-    public function send(Authenticatable $user, string $code): void
+    public function getName(): string
+    {
+        return 'sms';
+    }
+
+    public function send(Authenticatable $user, string $code, array $options = []): void
     {
         if (! ($this->config['enabled'] ?? true)) {
             return;
@@ -23,7 +29,7 @@ class SmsChannel
             return;
         }
 
-        $message = "Your verification code is: {$code}";
+        $message = $options['message'] ?? "Your verification code is: {$code}";
 
         if ($driver === 'log') {
             Log::info('MFA SMS', ['to' => $to, 'message' => $message]);

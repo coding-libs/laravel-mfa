@@ -4,6 +4,9 @@ namespace CodingLibs\MFA;
 
 use CodingLibs\MFA\Channels\EmailChannel;
 use CodingLibs\MFA\Channels\SmsChannel;
+use CodingLibs\MFA\ChannelRegistry;
+use CodingLibs\MFA\Contracts\MfaChannel;
+use CodingLibs\MFA\Support\QrCodeGenerator;
 use CodingLibs\MFA\Models\MfaChallenge;
 use CodingLibs\MFA\Models\MfaMethod;
 use CodingLibs\MFA\Totp\GoogleTotp;
@@ -15,10 +18,19 @@ use Illuminate\Support\Facades\DB;
 class MFA
 {
     protected array $config;
+    protected ChannelRegistry $registry;
 
     public function __construct(array $config)
     {
         $this->config = $config;
+        $this->registry = new ChannelRegistry();
+        $this->registerDefaultChannels();
+    }
+
+    protected function registerDefaultChannels(): void
+    {
+        $this->registry->register(new EmailChannel($this->config['email'] ?? []));
+        $this->registry->register(new SmsChannel($this->config['sms'] ?? []));
     }
 
     public function setupTotp(Authenticatable $user, ?string $issuer = null, ?string $label = null): array
@@ -58,7 +70,8 @@ class MFA
     public function issueChallenge(Authenticatable $user, string $method): ?MfaChallenge
     {
         $method = strtolower($method);
-        if (! in_array($method, ['email', 'sms'], true)) {
+        $channel = $this->registry->get($method);
+        if (! $channel) {
             return null;
         }
 
@@ -74,13 +87,30 @@ class MFA
         $challenge->expires_at = Carbon::now()->addSeconds($ttlSeconds);
         $challenge->save();
 
-        if ($method === 'email') {
-            (new EmailChannel($this->config['email'] ?? []))->send($user, $code);
-        } else if ($method === 'sms') {
-            (new SmsChannel($this->config['sms'] ?? []))->send($user, $code);
-        }
+        $channel->send($user, $code);
 
         return $challenge;
+    }
+
+    public function registerChannel(MfaChannel $channel): void
+    {
+        $this->registry->register($channel);
+    }
+
+    public function generateTotpQrCodeBase64(Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200): ?string
+    {
+        $method = $this->getMethod($user, 'totp');
+        if (! $method || ! $method->secret) {
+            return null;
+        }
+
+        $issuer = $issuer ?: Arr::get($this->config, 'totp.issuer', 'Laravel');
+        $label = $label ?: (method_exists($user, 'getEmailForVerification') ? $user->getEmailForVerification() : ($user->email ?? (string) $user->getAuthIdentifier()));
+        $digits = Arr::get($this->config, 'totp.digits', 6);
+        $period = Arr::get($this->config, 'totp.period', 30);
+
+        $otpauth = GoogleTotp::buildOtpAuthUrl($method->secret, $label, $issuer, $digits, $period);
+        return QrCodeGenerator::generateBase64Png($otpauth, $size);
     }
 
     public function verifyChallenge(Authenticatable $user, string $method, string $code): bool
