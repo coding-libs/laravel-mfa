@@ -14,6 +14,9 @@ abstract class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app): void
     {
+        // Ensure app key exists for encrypter-dependent features
+        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
+
         config()->set('database.default', 'testing');
         config()->set('database.connections.testing', [
             'driver'   => 'sqlite',
