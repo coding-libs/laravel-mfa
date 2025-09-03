@@ -23,6 +23,7 @@ Features
 - Google Authenticator compatible **TOTP** (RFC 6238) setup and verification
 - Built-in QR code generation to display TOTP provisioning URI (uses bacon/bacon-qr-code)
 - Remember device support via secure, hashed tokens stored in `mfa_remembered_devices`
+- Recovery Codes: generate, verify, and manage one-time backup codes
 - Simple API via `MFA` facade/service for issuing and verifying codes
 - Publishable config and migrations; encrypted storage of TOTP secret
 - Extendable channel system to add providers like WhatsApp, Twilio, etc.
@@ -63,6 +64,16 @@ $cookie = $result['cookie']; // Symfony Cookie instance — attach to response
 
 // Later, skip MFA if remembered device cookie is valid
 $shouldSkip = MFA::shouldSkipVerification(auth()->user(), MFA::getRememberTokenFromRequest(request()));
+
+// Recovery Codes
+// Generate a fresh set (returns plaintext codes to show once)
+$codes = MFA::generateRecoveryCodes(auth()->user());
+// Verify and consume a recovery code
+$ok = MFA::verifyRecoveryCode(auth()->user(), $inputCode);
+// Count remaining unused codes
+$remaining = MFA::getRemainingRecoveryCodesCount(auth()->user());
+// Clear all codes
+$deleted = MFA::clearRecoveryCodes(auth()->user());
 ```
 
 Remember Devices (Optional)
@@ -92,6 +103,12 @@ Configuration
     - cookie: cookie name (default `mfa_rd`)
     - lifetime_days: validity window (default 30)
     - path, domain, secure, http_only, same_site
+  - **recovery**:
+    - enabled (bool, default true)
+    - codes_count: number of codes to generate (default 10)
+    - code_length: length of each code (default 10)
+    - regenerate_on_use: whether to auto-regenerate when consumed (default false)
+    - hash_algo: hashing algorithm for stored codes (default `sha256`)
 
 Environment variables (examples)
 ```
@@ -115,6 +132,12 @@ MFA_REMEMBER_DOMAIN=
 MFA_REMEMBER_SECURE=null
 MFA_REMEMBER_HTTP_ONLY=true
 MFA_REMEMBER_SAME_SITE=lax
+
+MFA_RECOVERY_ENABLED=true
+MFA_RECOVERY_CODES_COUNT=10
+MFA_RECOVERY_CODE_LENGTH=10
+MFA_RECOVERY_REGENERATE_ON_USE=false
+MFA_RECOVERY_HASH_ALGO=sha256
 ```
 
 Database
@@ -122,6 +145,7 @@ Database
   - `mfa_methods`: tracks enabled MFA methods per user; stores encrypted TOTP `secret`
   - `mfa_challenges`: stores pending OTP codes for email/sms with expiry and consumed_at
   - `mfa_remembered_devices`: stores hashed tokens for device recognition with IP, UA, and expiry
+  - `mfa_recovery_codes`: stores hashed recovery codes and usage timestamp
 
 API Overview (Facade `MFA`)
 - **issueChallenge(Authenticatable $user, string $method): ?MfaChallenge**
@@ -140,6 +164,11 @@ API Overview (Facade `MFA`)
   - **shouldSkipVerification(Authenticatable $user, ?string $token): bool**
   - **makeRememberCookie(string $token, ?int $lifetimeDays = null): Cookie**
   - **forgetRememberedDevice(Authenticatable $user, string $token): int**
+  - Recovery codes:
+    - **generateRecoveryCodes(Authenticatable $user, ?int $count = null, ?int $length = null, bool $replaceExisting = true): array** returns plaintext codes
+    - **verifyRecoveryCode(Authenticatable $user, string $code): bool**
+    - **getRemainingRecoveryCodesCount(Authenticatable $user): int**
+    - **clearRecoveryCodes(Authenticatable $user): int**
 
 Creating a Custom MFA Channel
 Steps

@@ -46,10 +46,22 @@ return new class extends Migration {
             $table->unique(['user_type', 'user_id', 'token_hash'], 'mfa_rd_unique');
             $table->index(['user_type', 'user_id'], 'mfa_rd_user_idx');
         });
+
+        Schema::create('mfa_recovery_codes', function (Blueprint $table) {
+            $table->id();
+            $table->string('user_type');
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('code_hash', 128);
+            $table->timestamp('used_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['user_type', 'user_id'], 'mfa_rc_user_idx');
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('mfa_recovery_codes');
         Schema::dropIfExists('mfa_remembered_devices');
         Schema::dropIfExists('mfa_challenges');
         Schema::dropIfExists('mfa_methods');
