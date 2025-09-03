@@ -10,6 +10,7 @@ use CodingLibs\MFA\Support\QrCodeGenerator;
 use CodingLibs\MFA\Models\MfaChallenge;
 use CodingLibs\MFA\Models\MfaMethod;
 use CodingLibs\MFA\Models\MfaRememberedDevice;
+use CodingLibs\MFA\Models\MfaRecoveryCode;
 use CodingLibs\MFA\Totp\GoogleTotp;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
@@ -292,6 +293,104 @@ class MFA
             ->where('user_id', $user->getAuthIdentifier())
             ->where('method', strtolower($method))
             ->first();
+    }
+
+    /**
+     * Generate and persist recovery codes for the given user.
+     * Returns the plaintext codes; hashes are stored in DB.
+     */
+    public function generateRecoveryCodes(Authenticatable $user, ?int $count = null, ?int $length = null, bool $replaceExisting = true): array
+    {
+        $count = $count ?? (int) Arr::get($this->config, 'recovery.codes_count', 10);
+        $length = $length ?? (int) Arr::get($this->config, 'recovery.code_length', 10);
+
+        if ($replaceExisting) {
+            MfaRecoveryCode::query()
+                ->where('user_type', get_class($user))
+                ->where('user_id', $user->getAuthIdentifier())
+                ->delete();
+        }
+
+        $plaintextCodes = [];
+        for ($i = 0; $i < $count; $i++) {
+            $code = $this->generateReadableCode($length);
+            $hash = $this->hashRecoveryCode($code);
+
+            $record = new MfaRecoveryCode();
+            $record->user_type = get_class($user);
+            $record->user_id = $user->getAuthIdentifier();
+            $record->code_hash = $hash;
+            $record->used_at = null;
+            $record->save();
+
+            $plaintextCodes[] = $code;
+        }
+
+        return $plaintextCodes;
+    }
+
+    /** Verify and consume a recovery code for the user. */
+    public function verifyRecoveryCode(Authenticatable $user, string $code): bool
+    {
+        $hash = $this->hashRecoveryCode($code);
+        $record = MfaRecoveryCode::query()
+            ->where('user_type', get_class($user))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->whereNull('used_at')
+            ->where('code_hash', $hash)
+            ->first();
+
+        if (! $record) {
+            return false;
+        }
+
+        $record->used_at = Carbon::now();
+        $record->save();
+
+        if ((bool) Arr::get($this->config, 'recovery.regenerate_on_use', false)) {
+            $length = (int) Arr::get($this->config, 'recovery.code_length', 10);
+            // Generate a single replacement code to keep the pool size steady
+            $this->generateRecoveryCodes($user, 1, $length, false);
+        }
+
+        return true;
+    }
+
+    /** Get remaining (unused) recovery codes count for the user. */
+    public function getRemainingRecoveryCodesCount(Authenticatable $user): int
+    {
+        return MfaRecoveryCode::query()
+            ->where('user_type', get_class($user))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->whereNull('used_at')
+            ->count();
+    }
+
+    /** Delete all recovery codes for the user. Returns number deleted. */
+    public function clearRecoveryCodes(Authenticatable $user): int
+    {
+        return MfaRecoveryCode::query()
+            ->where('user_type', get_class($user))
+            ->where('user_id', $user->getAuthIdentifier())
+            ->delete();
+    }
+
+    protected function generateReadableCode(int $length): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // exclude ambiguous chars
+        $maxIndex = strlen($alphabet) - 1;
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $idx = random_int(0, $maxIndex);
+            $code .= $alphabet[$idx];
+        }
+        return $code;
+    }
+
+    protected function hashRecoveryCode(string $code): string
+    {
+        $algo = (string) Arr::get($this->config, 'recovery.hash_algo', 'sha256');
+        return hash($algo, $code);
     }
 }
 

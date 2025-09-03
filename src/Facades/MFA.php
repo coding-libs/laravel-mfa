@@ -27,6 +27,10 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool disableMethod(\Illuminate\Contracts\Auth\Authenticatable $user, string $method)
  * @method static bool isEnabled(\Illuminate\Contracts\Auth\Authenticatable $user, string $method)
  * @method static ?\CodingLibs\MFA\Models\MfaMethod getMethod(\Illuminate\Contracts\Auth\Authenticatable $user, string $method)
+ * @method static array generateRecoveryCodes(\Illuminate\Contracts\Auth\Authenticatable $user, ?int $count = null, ?int $length = null, bool $replaceExisting = true)
+ * @method static bool verifyRecoveryCode(\Illuminate\Contracts\Auth\Authenticatable $user, string $code)
+ * @method static int getRemainingRecoveryCodesCount(\Illuminate\Contracts\Auth\Authenticatable $user)
+ * @method static int clearRecoveryCodes(\Illuminate\Contracts\Auth\Authenticatable $user)
  *
  * @mixin \CodingLibs\MFA\MFA
  * @see \CodingLibs\MFA\MFA

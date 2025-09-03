@@ -34,5 +34,13 @@ return [
         'http_only'      => env('MFA_REMEMBER_HTTP_ONLY', true),
         'same_site'      => env('MFA_REMEMBER_SAME_SITE', 'lax'), // lax|strict|none
     ],
+
+    'recovery' => [
+        'enabled'            => env('MFA_RECOVERY_ENABLED', true),
+        'codes_count'        => (int) env('MFA_RECOVERY_CODES_COUNT', 10),
+        'code_length'        => (int) env('MFA_RECOVERY_CODE_LENGTH', 10),
+        'regenerate_on_use'  => env('MFA_RECOVERY_REGENERATE_ON_USE', false),
+        'hash_algo'          => env('MFA_RECOVERY_HASH_ALGO', 'sha256'),
+    ],
 ];
 
