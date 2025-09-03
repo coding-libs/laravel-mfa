@@ -9,32 +9,125 @@ return new class extends Migration {
     {
         Schema::create('mfa_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('user_type');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $morph = config('mfa.morph', []);
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $typeLength = (int) ($morph['type_length'] ?? 255);
+            $idType = $morph['type'] ?? 'unsignedBigInteger';
+            $idStringLength = (int) ($morph['string_length'] ?? 40);
+
+            $table->string($typeColumn, $typeLength);
+            switch ($idType) {
+                case 'unsignedInteger':
+                    $table->unsignedInteger($idColumn);
+                    break;
+                case 'bigInteger':
+                    $table->bigInteger($idColumn);
+                    break;
+                case 'integer':
+                    $table->integer($idColumn);
+                    break;
+                case 'string':
+                    $table->string($idColumn, $idStringLength);
+                    break;
+                case 'uuid':
+                    $table->uuid($idColumn);
+                    break;
+                case 'ulid':
+                    $table->ulid($idColumn);
+                    break;
+                case 'unsignedBigInteger':
+                default:
+                    $table->unsignedBigInteger($idColumn);
+                    break;
+            }
             $table->string('method'); // email|sms|totp
             $table->text('secret')->nullable(); // for totp
             $table->timestamp('enabled_at')->nullable();
             $table->timestamp('last_used_at')->nullable();
             $table->timestamps();
-            $table->index(['user_type', 'user_id', 'method']);
+            $table->index([$typeColumn, $idColumn, 'method']);
         });
 
         Schema::create('mfa_challenges', function (Blueprint $table) {
             $table->id();
-            $table->string('user_type');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $morph = config('mfa.morph', []);
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $typeLength = (int) ($morph['type_length'] ?? 255);
+            $idType = $morph['type'] ?? 'unsignedBigInteger';
+            $idStringLength = (int) ($morph['string_length'] ?? 40);
+
+            $table->string($typeColumn, $typeLength);
+            switch ($idType) {
+                case 'unsignedInteger':
+                    $table->unsignedInteger($idColumn);
+                    break;
+                case 'bigInteger':
+                    $table->bigInteger($idColumn);
+                    break;
+                case 'integer':
+                    $table->integer($idColumn);
+                    break;
+                case 'string':
+                    $table->string($idColumn, $idStringLength);
+                    break;
+                case 'uuid':
+                    $table->uuid($idColumn);
+                    break;
+                case 'ulid':
+                    $table->ulid($idColumn);
+                    break;
+                case 'unsignedBigInteger':
+                default:
+                    $table->unsignedBigInteger($idColumn);
+                    break;
+            }
             $table->string('method'); // email|sms
             $table->string('code');
             $table->timestamp('expires_at');
             $table->timestamp('consumed_at')->nullable();
             $table->timestamps();
-            $table->index(['user_type', 'user_id', 'method']);
+            $table->index([$typeColumn, $idColumn, 'method']);
         });
 
         Schema::create('mfa_remembered_devices', function (Blueprint $table) {
             $table->id();
-            $table->string('user_type');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $morph = config('mfa.morph', []);
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $typeLength = (int) ($morph['type_length'] ?? 255);
+            $idType = $morph['type'] ?? 'unsignedBigInteger';
+            $idStringLength = (int) ($morph['string_length'] ?? 40);
+
+            $table->string($typeColumn, $typeLength);
+            switch ($idType) {
+                case 'unsignedInteger':
+                    $table->unsignedInteger($idColumn);
+                    break;
+                case 'bigInteger':
+                    $table->bigInteger($idColumn);
+                    break;
+                case 'integer':
+                    $table->integer($idColumn);
+                    break;
+                case 'string':
+                    $table->string($idColumn, $idStringLength);
+                    break;
+                case 'uuid':
+                    $table->uuid($idColumn);
+                    break;
+                case 'ulid':
+                    $table->ulid($idColumn);
+                    break;
+                case 'unsignedBigInteger':
+                default:
+                    $table->unsignedBigInteger($idColumn);
+                    break;
+            }
             $table->string('token_hash', 64);
             $table->string('ip_address', 45)->nullable();
             $table->string('device_name')->nullable();
@@ -43,19 +136,50 @@ return new class extends Migration {
             $table->timestamp('expires_at');
             $table->timestamps();
 
-            $table->unique(['user_type', 'user_id', 'token_hash'], 'mfa_rd_unique');
-            $table->index(['user_type', 'user_id'], 'mfa_rd_user_idx');
+            $table->unique([$typeColumn, $idColumn, 'token_hash'], 'mfa_rd_unique');
+            $table->index([$typeColumn, $idColumn], 'mfa_rd_user_idx');
         });
 
         Schema::create('mfa_recovery_codes', function (Blueprint $table) {
             $table->id();
-            $table->string('user_type');
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $morph = config('mfa.morph', []);
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $typeLength = (int) ($morph['type_length'] ?? 255);
+            $idType = $morph['type'] ?? 'unsignedBigInteger';
+            $idStringLength = (int) ($morph['string_length'] ?? 40);
+
+            $table->string($typeColumn, $typeLength);
+            switch ($idType) {
+                case 'unsignedInteger':
+                    $table->unsignedInteger($idColumn);
+                    break;
+                case 'bigInteger':
+                    $table->bigInteger($idColumn);
+                    break;
+                case 'integer':
+                    $table->integer($idColumn);
+                    break;
+                case 'string':
+                    $table->string($idColumn, $idStringLength);
+                    break;
+                case 'uuid':
+                    $table->uuid($idColumn);
+                    break;
+                case 'ulid':
+                    $table->ulid($idColumn);
+                    break;
+                case 'unsignedBigInteger':
+                default:
+                    $table->unsignedBigInteger($idColumn);
+                    break;
+            }
             $table->string('code_hash', 128);
             $table->timestamp('used_at')->nullable();
             $table->timestamps();
 
-            $table->index(['user_type', 'user_id'], 'mfa_rc_user_idx');
+            $table->index([$typeColumn, $idColumn], 'mfa_rc_user_idx');
         });
     }
 

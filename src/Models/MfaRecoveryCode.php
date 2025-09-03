@@ -13,5 +13,12 @@ class MfaRecoveryCode extends Model
     protected $casts = [
         'used_at' => 'datetime',
     ];
+
+    public function model()
+    {
+        $morph = config('mfa.morph', []);
+        $name = $morph['name'] ?? 'model';
+        return $this->morphTo(__FUNCTION__, $name . '_type', $name . '_id');
+    }
 }
 
