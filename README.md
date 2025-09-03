@@ -82,6 +82,46 @@ Remember Devices (Optional)
 - On subsequent requests, use `MFA::shouldSkipVerification($user, MFA::getRememberTokenFromRequest($request))`
 - To revoke a remembered device, call `MFA::forgetRememberedDevice($user, $token)`
 
+Recovery Codes
+- What they are: single‑use backup codes that let users complete MFA when they cannot access their primary factor (e.g., lost phone or no network).
+- Storage and security:
+  - Plaintext codes are returned only once at generation time; only their hashes are stored in `mfa_recovery_codes`.
+  - Hashing algorithm is configurable via `mfa.recovery.hash_algo` (default `sha256`).
+  - Codes are marked as used at first successful verification and cannot be reused.
+- Generating and displaying to the user:
+```php
+// Generate N codes (defaults come from config)
+$codes = MFA::generateRecoveryCodes($user); // array of plaintext codes
+
+// Show these codes once to the user and prompt them to store securely
+// e.g., render as a list and offer a download/print option
+```
+- Verifying a code and optional regeneration-on-use:
+```php
+if (MFA::verifyRecoveryCode($user, $input)) {
+    // Success: log user in and consider rotating codes if desired
+}
+```
+- Pool size maintenance: set `mfa.recovery.regenerate_on_use = true` to automatically replace a consumed code with a new one so the remaining count stays steady.
+- Managing codes:
+```php
+// Count remaining unused codes
+$remaining = MFA::getRemainingRecoveryCodesCount($user);
+
+// Replace all existing codes with a new set
+$fresh = MFA::generateRecoveryCodes($user); // replaceExisting=true by default
+
+// Append without deleting existing codes
+$extra = MFA::generateRecoveryCodes($user, count: 2, replaceExisting: false);
+
+// Clear all codes
+$deleted = MFA::clearRecoveryCodes($user);
+```
+- UX recommendations:
+  - Require the user to confirm they’ve saved the codes before leaving the setup screen.
+  - Offer copy, download (txt), and print actions. Avoid storing plaintext on your servers.
+  - Warn that each code is one-time and will be invalid after use.
+
 Configuration
 - See `config/mfa.php` for all options. Key settings:
   - **code_length**: OTP digits for email/sms (default 6)
