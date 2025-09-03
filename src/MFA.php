@@ -83,8 +83,12 @@ class MFA
         $code = str_pad((string) random_int(0, (10 ** $codeLength) - 1), $codeLength, '0', STR_PAD_LEFT);
 
         $challenge = new MfaChallenge();
-        $challenge->user_type = get_class($user);
-        $challenge->user_id = $user->getAuthIdentifier();
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
+        $challenge->setAttribute($typeColumn, get_class($user));
+        $challenge->setAttribute($idColumn, $user->getAuthIdentifier());
         $challenge->method = $method;
         $challenge->code = $code;
         $challenge->expires_at = Carbon::now()->addSeconds($ttlSeconds);
@@ -120,9 +124,13 @@ class MFA
     {
         $now = Carbon::now();
 
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         $challenge = MfaChallenge::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->where('method', strtolower($method))
             ->whereNull('consumed_at')
             ->where('expires_at', '>', $now)
@@ -170,9 +178,13 @@ class MFA
 
         $hash = hash('sha256', $token);
         $now = Carbon::now();
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         $record = MfaRememberedDevice::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->where('token_hash', $hash)
             ->where('expires_at', '>', $now)
             ->first();
@@ -206,8 +218,12 @@ class MFA
         $hash = hash('sha256', $plainToken);
 
         $record = new MfaRememberedDevice();
-        $record->user_type = get_class($user);
-        $record->user_id = $user->getAuthIdentifier();
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
+        $record->setAttribute($typeColumn, get_class($user));
+        $record->setAttribute($idColumn, $user->getAuthIdentifier());
         $record->token_hash = $hash;
         $record->device_name = $deviceName;
         $request = app('request');
@@ -243,9 +259,13 @@ class MFA
     public function forgetRememberedDevice(Authenticatable $user, string $token): int
     {
         $hash = hash('sha256', $token);
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         return MfaRememberedDevice::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->where('token_hash', $hash)
             ->delete();
     }
@@ -255,8 +275,12 @@ class MFA
         $record = $this->getMethod($user, $method);
         if (! $record) {
             $record = new MfaMethod();
-            $record->user_type = get_class($user);
-            $record->user_id = $user->getAuthIdentifier();
+            $morph = $this->config['morph'] ?? [];
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $record->setAttribute($typeColumn, get_class($user));
+            $record->setAttribute($idColumn, $user->getAuthIdentifier());
             $record->method = strtolower($method);
         }
 
@@ -288,9 +312,13 @@ class MFA
 
     public function getMethod(Authenticatable $user, string $method): ?MfaMethod
     {
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         return MfaMethod::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->where('method', strtolower($method))
             ->first();
     }
@@ -305,9 +333,13 @@ class MFA
         $length = $length ?? (int) Arr::get($this->config, 'recovery.code_length', 10);
 
         if ($replaceExisting) {
+            $morph = $this->config['morph'] ?? [];
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
             MfaRecoveryCode::query()
-                ->where('user_type', get_class($user))
-                ->where('user_id', $user->getAuthIdentifier())
+                ->where($typeColumn, get_class($user))
+                ->where($idColumn, $user->getAuthIdentifier())
                 ->delete();
         }
 
@@ -317,8 +349,12 @@ class MFA
             $hash = $this->hashRecoveryCode($code);
 
             $record = new MfaRecoveryCode();
-            $record->user_type = get_class($user);
-            $record->user_id = $user->getAuthIdentifier();
+            $morph = $this->config['morph'] ?? [];
+            $morphName = $morph['name'] ?? 'model';
+            $typeColumn = $morphName . '_type';
+            $idColumn = $morphName . '_id';
+            $record->setAttribute($typeColumn, get_class($user));
+            $record->setAttribute($idColumn, $user->getAuthIdentifier());
             $record->code_hash = $hash;
             $record->used_at = null;
             $record->save();
@@ -333,9 +369,13 @@ class MFA
     public function verifyRecoveryCode(Authenticatable $user, string $code): bool
     {
         $hash = $this->hashRecoveryCode($code);
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         $record = MfaRecoveryCode::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->whereNull('used_at')
             ->where('code_hash', $hash)
             ->first();
@@ -359,9 +399,13 @@ class MFA
     /** Get remaining (unused) recovery codes count for the user. */
     public function getRemainingRecoveryCodesCount(Authenticatable $user): int
     {
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         return MfaRecoveryCode::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->whereNull('used_at')
             ->count();
     }
@@ -369,9 +413,13 @@ class MFA
     /** Delete all recovery codes for the user. Returns number deleted. */
     public function clearRecoveryCodes(Authenticatable $user): int
     {
+        $morph = $this->config['morph'] ?? [];
+        $morphName = $morph['name'] ?? 'model';
+        $typeColumn = $morphName . '_type';
+        $idColumn = $morphName . '_id';
         return MfaRecoveryCode::query()
-            ->where('user_type', get_class($user))
-            ->where('user_id', $user->getAuthIdentifier())
+            ->where($typeColumn, get_class($user))
+            ->where($idColumn, $user->getAuthIdentifier())
             ->delete();
     }
 

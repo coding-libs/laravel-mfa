@@ -42,5 +42,21 @@ return [
         'regenerate_on_use'  => env('MFA_RECOVERY_REGENERATE_ON_USE', false),
         'hash_algo'          => env('MFA_RECOVERY_HASH_ALGO', 'sha256'),
     ],
+
+    // Polymorphic owner of MFA records: columns will be model_type/model_id
+    'morph' => [
+        // Column name prefix; results in `${name}_type` and `${name}_id`
+        'name'           => env('MFA_MORPH_NAME', 'model'),
+
+        // ID column type for `${name}_id`.
+        // Supported: unsignedBigInteger (default) | unsignedInteger | bigInteger | integer | string | uuid | ulid
+        'type'           => env('MFA_MORPH_TYPE', 'unsignedBigInteger'),
+
+        // Length for `${name}_id` when type is "string"
+        'string_length'  => (int) env('MFA_MORPH_STRING_LENGTH', 40),
+
+        // Length for `${name}_type` column
+        'type_length'    => (int) env('MFA_MORPH_TYPE_LENGTH', 255),
+    ],
 ];
 
