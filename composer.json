@@ -25,7 +25,8 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "CodingLibs\\MFA\\Tests\\": "tests/"
+      "CodingLibs\\MFA\\Tests\\": "tests/",
+      "Tests\\": "tests/"
     }
   },
   "extra": {
