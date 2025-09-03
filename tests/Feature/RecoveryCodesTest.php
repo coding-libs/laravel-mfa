@@ -3,7 +3,7 @@
 use CodingLibs\MFA\Models\MfaRecoveryCode;
 use Illuminate\Contracts\Auth\Authenticatable;
 
-uses(Tests\TestCase::class);
+// TestCase for Feature tests is applied via tests/Pest.php
 
 class FakeUser implements Authenticatable
 {
@@ -19,6 +19,10 @@ class FakeUser implements Authenticatable
 	public function getAuthPassword()
 	{
 		return '';
+	}
+	public function getAuthPasswordName()
+	{
+		return 'password';
 	}
 	public function getRememberToken()
 	{
