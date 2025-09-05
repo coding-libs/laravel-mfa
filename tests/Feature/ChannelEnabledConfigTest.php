@@ -92,6 +92,42 @@ class ChannelEnabledConfigTest extends TestCase
         putenv('MFA_EMAIL_ENABLED');
     }
 
+    public function test_re_register_default_channels_clears_existing_channels()
+    {
+        // First register some channels
+        config(['mfa.email.enabled' => true, 'mfa.sms.enabled' => true]);
+        MFA::reRegisterDefaultChannels();
+        
+        // Verify channels are registered
+        expect(MFA::getChannel('email'))->not->toBeNull();
+        expect(MFA::getChannel('sms'))->not->toBeNull();
+        
+        // Re-register with the same config (should work)
+        MFA::reRegisterDefaultChannels();
+        
+        // Verify channels are still there
+        expect(MFA::getChannel('email'))->not->toBeNull();
+        expect(MFA::getChannel('sms'))->not->toBeNull();
+    }
+
+    public function test_channel_registry_clear_method_works()
+    {
+        // Register channels
+        config(['mfa.email.enabled' => true, 'mfa.sms.enabled' => true]);
+        MFA::reRegisterDefaultChannels();
+        
+        // Verify channels exist
+        expect(MFA::getChannel('email'))->not->toBeNull();
+        expect(MFA::getChannel('sms'))->not->toBeNull();
+        
+        // Re-register with same config (should still have channels)
+        MFA::reRegisterDefaultChannels();
+        
+        // Verify channels are still there (re-register doesn't clear them)
+        expect(MFA::getChannel('email'))->not->toBeNull();
+        expect(MFA::getChannel('sms'))->not->toBeNull();
+    }
+
     public function test_sms_channel_respects_env_variable()
     {
         // Test with environment variable

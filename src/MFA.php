@@ -167,8 +167,16 @@ class MFA
 
     protected function createChannelFromConfig(array $config): MfaChannel
     {
+        if (empty($config)) {
+            throw new \InvalidArgumentException('Channel config cannot be empty');
+        }
+
         $channelClass = $config['channel'] ?? throw new \InvalidArgumentException('channel must be specified in config');
         
+        if (!is_string($channelClass)) {
+            throw new \InvalidArgumentException('channel must be a string class name');
+        }
+
         if (!class_exists($channelClass)) {
             throw new \InvalidArgumentException("Channel class '{$channelClass}' does not exist");
         }
