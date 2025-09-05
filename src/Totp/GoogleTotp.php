@@ -17,9 +17,9 @@ class GoogleTotp
         return sprintf('otpauth://totp/%s?secret=%s&issuer=%s&digits=%d&period=%d', $labelEnc, $secret, $issuerEnc, $digits, $period);
     }
 
-    public static function verifyCode(string $secret, string $code, int $digits = 6, int $period = 30, int $window = 1): bool
+    public static function verifyCode(string $secret, string $code, int $digits = 6, int $period = 30, int $window = 1, ?int $timestamp = null): bool
     {
-        $timeSlice = floor(time() / $period);
+        $timeSlice = floor(($timestamp ?? time()) / $period);
         for ($i = -$window; $i <= $window; $i++) {
             $hash = self::hotp(self::base32Decode($secret), $timeSlice + $i);
             $otp = self::truncateToDigits($hash, $digits);

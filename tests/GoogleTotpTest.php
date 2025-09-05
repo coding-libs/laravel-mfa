@@ -29,12 +29,13 @@ it('verifies a known code for a fixed time slice', function () {
 
     $period = 30;
     $digits = 6;
-    $timeSlice = intdiv(59, $period); // from RFC 6238 example 59s
+    $timestamp = 59; // from RFC 6238 example 59s
+    $timeSlice = intdiv($timestamp, $period);
     $hash = $hotp->invoke(null, $base32Decode->invoke(null, $secret), $timeSlice);
     $expected = $truncate->invoke(null, $hash, $digits);
 
-    // Now verify using public API with window 0 to ensure exact slice
-    $verified = GoogleTotp::verifyCode($secret, $expected, $digits, $period, 0);
+    // Now verify using public API with the specific timestamp and window 0 to ensure exact slice
+    $verified = GoogleTotp::verifyCode($secret, $expected, $digits, $period, 0, $timestamp);
     expect($verified)->toBeTrue();
 });
 
