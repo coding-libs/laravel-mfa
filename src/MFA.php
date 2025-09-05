@@ -32,8 +32,32 @@ class MFA
 
     protected function registerDefaultChannels(): void
     {
-        $this->registry->register(new EmailChannel($this->config['email'] ?? []));
-        $this->registry->register(new SmsChannel($this->config['sms'] ?? []));
+        $this->registry->register($this->createChannel('email', $this->config['email'] ?? []));
+        $this->registry->register($this->createChannel('sms', $this->config['sms'] ?? []));
+    }
+
+    protected function createChannel(string $type, array $config): MfaChannel
+    {
+        $channelClass = $config['channel'] ?? $this->getDefaultChannelClass($type);
+        
+        if (!class_exists($channelClass)) {
+            throw new \InvalidArgumentException("Channel class '{$channelClass}' does not exist for type '{$type}'");
+        }
+
+        if (!is_subclass_of($channelClass, MfaChannel::class)) {
+            throw new \InvalidArgumentException("Channel class '{$channelClass}' must implement " . MfaChannel::class);
+        }
+
+        return new $channelClass($config);
+    }
+
+    protected function getDefaultChannelClass(string $type): string
+    {
+        return match ($type) {
+            'email' => EmailChannel::class,
+            'sms' => SmsChannel::class,
+            default => throw new \InvalidArgumentException("Unknown channel type: {$type}")
+        };
     }
 
     public function setupTotp(Authenticatable $user, ?string $issuer = null, ?string $label = null): array
@@ -70,7 +94,27 @@ class MFA
         return $verified;
     }
 
-    public function issueChallenge(Authenticatable $user, string $method): ?MfaChallenge
+    public function issueChallenge(Authenticatable $user, string $method, bool $send = true): ?MfaChallenge
+    {
+        $method = strtolower($method);
+        $channel = $this->registry->get($method);
+        if (! $channel) {
+            return null;
+        }
+
+        $challenge = $this->generateChallenge($user, $method);
+        if (! $challenge) {
+            return null;
+        }
+
+        if ($send) {
+            $channel->send($user, $challenge->code);
+        }
+
+        return $challenge;
+    }
+
+    public function generateChallenge(Authenticatable $user, string $method): ?MfaChallenge
     {
         $method = strtolower($method);
         $channel = $this->registry->get($method);
@@ -94,14 +138,38 @@ class MFA
         $challenge->expires_at = Carbon::now()->addSeconds($ttlSeconds);
         $challenge->save();
 
-        $channel->send($user, $code);
-
         return $challenge;
     }
 
     public function registerChannel(MfaChannel $channel): void
     {
         $this->registry->register($channel);
+    }
+
+    public function registerChannelFromConfig(string $type, array $config): void
+    {
+        $channel = $this->createChannelFromConfig($config);
+        $this->registry->register($channel);
+    }
+
+    protected function createChannelFromConfig(array $config): MfaChannel
+    {
+        $channelClass = $config['channel'] ?? throw new \InvalidArgumentException('channel must be specified in config');
+        
+        if (!class_exists($channelClass)) {
+            throw new \InvalidArgumentException("Channel class '{$channelClass}' does not exist");
+        }
+
+        if (!is_subclass_of($channelClass, MfaChannel::class)) {
+            throw new \InvalidArgumentException("Channel class '{$channelClass}' must implement " . MfaChannel::class);
+        }
+
+        return new $channelClass($config);
+    }
+
+    public function getChannel(string $name): ?MfaChannel
+    {
+        return $this->registry->get($name);
     }
 
     public function generateTotpQrCodeBase64(Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200): ?string
