@@ -29,5 +29,10 @@ class ChannelRegistry
     {
         return $this->channels;
     }
+
+    public function clear(): void
+    {
+        $this->channels = [];
+    }
 }
 

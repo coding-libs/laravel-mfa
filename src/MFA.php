@@ -32,8 +32,15 @@ class MFA
 
     protected function registerDefaultChannels(): void
     {
-        $this->registry->register($this->createChannel('email', $this->config['email'] ?? []));
-        $this->registry->register($this->createChannel('sms', $this->config['sms'] ?? []));
+        // Register email channel if enabled
+        if (Arr::get($this->config, 'email.enabled', true)) {
+            $this->registry->register($this->createChannel('email', $this->config['email'] ?? []));
+        }
+        
+        // Register SMS channel if enabled
+        if (Arr::get($this->config, 'sms.enabled', true)) {
+            $this->registry->register($this->createChannel('sms', $this->config['sms'] ?? []));
+        }
     }
 
     protected function createChannel(string $type, array $config): MfaChannel
@@ -150,6 +157,12 @@ class MFA
     {
         $channel = $this->createChannelFromConfig($config);
         $this->registry->register($channel);
+    }
+
+    public function reRegisterDefaultChannels(): void
+    {
+        $this->registry->clear();
+        $this->registerDefaultChannels();
     }
 
     protected function createChannelFromConfig(array $config): MfaChannel

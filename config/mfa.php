@@ -5,7 +5,7 @@ return [
     'code_ttl_seconds' => 300,
 
     'email' => [
-        'enabled'      => true,
+        'enabled'      => env('MFA_EMAIL_ENABLED', true),
         'from_address' => env('MFA_EMAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
         'from_name'    => env('MFA_EMAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Laravel')),
         'subject'      => env('MFA_EMAIL_SUBJECT', 'Your verification code'),
@@ -13,7 +13,7 @@ return [
     ],
 
     'sms' => [
-        'enabled' => true,
+        'enabled' => env('MFA_SMS_ENABLED', true),
         'driver'  => env('MFA_SMS_DRIVER', 'log'), // log|null
         'from'    => env('MFA_SMS_FROM', ''),
         'channel' => env('MFA_SMS_CHANNEL', \CodingLibs\MFA\Channels\SmsChannel::class),

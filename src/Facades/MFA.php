@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static ?\CodingLibs\MFA\Models\MfaChallenge generateChallenge(\Illuminate\Contracts\Auth\Authenticatable $user, string $method)
  * @method static void registerChannel(\CodingLibs\MFA\Contracts\MfaChannel $channel)
  * @method static void registerChannelFromConfig(string $type, array $config)
+ * @method static void reRegisterDefaultChannels()
  * @method static ?\CodingLibs\MFA\Contracts\MfaChannel getChannel(string $name)
  * @method static ?string generateTotpQrCodeBase64(\Illuminate\Contracts\Auth\Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200)
  * @method static ?string generateTotpQrCodeSvg(\Illuminate\Contracts\Auth\Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200)

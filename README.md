@@ -162,11 +162,13 @@ Configuration
 
 Environment variables (examples)
 ```
+MFA_EMAIL_ENABLED=true
 MFA_EMAIL_FROM_ADDRESS="no-reply@example.com"
 MFA_EMAIL_FROM_NAME="Example App"
 MFA_EMAIL_SUBJECT="Your verification code"
 MFA_EMAIL_CHANNEL="App\Channels\CustomEmailChannel"
 
+MFA_SMS_ENABLED=true
 MFA_SMS_DRIVER=log
 MFA_SMS_FROM="ExampleApp"
 MFA_SMS_CHANNEL="App\Channels\CustomSmsChannel"
