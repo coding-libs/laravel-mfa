@@ -20,6 +20,8 @@ php artisan migrate
 
 Features
 - **Email** and **SMS** one-time code challenges with pluggable channels
+- **Configurable channel classes** - extend Email and SMS channels via configuration
+- **Challenge generation without sending** - generate codes without automatic delivery
 - Google Authenticator compatible **TOTP** (RFC 6238) setup and verification
 - Built-in QR code generation to display TOTP provisioning URI (uses bacon/bacon-qr-code)
 - Remember device support via secure, hashed tokens stored in `mfa_remembered_devices`
@@ -42,10 +44,16 @@ Usage
 ```php
 use CodingLibs\MFA\Facades\MFA;
 
-// Email/SMS
+// Email/SMS - Generate and send automatically
 $challenge = MFA::issueChallenge(auth()->user(), 'email');
 // then later
 $ok = MFA::verifyChallenge(auth()->user(), 'email', '123456');
+
+// Generate challenge without sending
+$challenge = MFA::generateChallenge(auth()->user(), 'email');
+// or
+$challenge = MFA::issueChallenge(auth()->user(), 'email', false);
+// Now handle sending manually
 
 // TOTP
 $setup = MFA::setupTotp(auth()->user());
@@ -129,10 +137,12 @@ Configuration
   - **email**:
     - enabled (bool)
     - from_address, from_name, subject
+    - channel: custom channel class (default: EmailChannel)
   - **sms**:
     - enabled (bool)
     - driver: `log` (default) or custom integration
     - from: optional sender id/number
+    - channel: custom channel class (default: SmsChannel)
   - **totp**:
     - issuer: defaults to `config('app.name')`
     - digits: 6 by default
@@ -155,9 +165,11 @@ Environment variables (examples)
 MFA_EMAIL_FROM_ADDRESS="no-reply@example.com"
 MFA_EMAIL_FROM_NAME="Example App"
 MFA_EMAIL_SUBJECT="Your verification code"
+MFA_EMAIL_CHANNEL="App\Channels\CustomEmailChannel"
 
 MFA_SMS_DRIVER=log
 MFA_SMS_FROM="ExampleApp"
+MFA_SMS_CHANNEL="App\Channels\CustomSmsChannel"
 
 MFA_TOTP_ISSUER="Example App"
 MFA_TOTP_DIGITS=6
@@ -188,7 +200,8 @@ Database
   - `mfa_recovery_codes`: stores hashed recovery codes and usage timestamp
 
 API Overview (Facade `MFA`)
-- **issueChallenge(Authenticatable $user, string $method): ?MfaChallenge**
+- **issueChallenge(Authenticatable $user, string $method, bool $send = true): ?MfaChallenge**
+- **generateChallenge(Authenticatable $user, string $method): ?MfaChallenge** - Generate without sending
 - **verifyChallenge(Authenticatable $user, string $method, string $code): bool**
 - **setupTotp(Authenticatable $user, ?string $issuer = null, ?string $label = null): array** returns `['secret','otpauth_url']`
 - **verifyTotp(Authenticatable $user, string $code): bool**
@@ -210,7 +223,73 @@ API Overview (Facade `MFA`)
     - **getRemainingRecoveryCodesCount(Authenticatable $user): int**
     - **clearRecoveryCodes(Authenticatable $user): int**
 
-Creating a Custom MFA Channel
+## Custom Channel Classes
+
+### Configuration-Based Custom Channels
+
+You can extend the built-in Email and SMS channels by configuring custom channel classes:
+
+```php
+// config/mfa.php
+'email' => [
+    'enabled' => true,
+    'channel' => \App\Channels\CustomEmailChannel::class,
+    'from_address' => 'noreply@example.com',
+    // ... other config
+],
+
+'sms' => [
+    'enabled' => true,
+    'channel' => \App\Channels\CustomSmsChannel::class,
+    'driver' => 'custom',
+    // ... other config
+],
+```
+
+```php
+// app/Channels/CustomEmailChannel.php
+use CodingLibs\MFA\Channels\EmailChannel;
+
+class CustomEmailChannel extends EmailChannel
+{
+    public function send(Authenticatable $user, string $code, array $options = []): void
+    {
+        // Custom sending logic
+        Mail::to($user->email)->send(new CustomMfaMail($code, $this->config));
+    }
+}
+```
+
+### Programmatic Channel Registration
+
+```php
+// In a service provider
+MFA::registerChannelFromConfig('custom_channel', [
+    'channel' => CustomChannel::class,
+    'channel_name' => 'custom_channel',
+    'custom_setting' => 'value'
+]);
+```
+
+## Challenge Generation Without Sending
+
+Generate challenge codes without automatic delivery:
+
+```php
+// Generate challenge without sending
+$challenge = MFA::generateChallenge(auth()->user(), 'email');
+echo $challenge->code; // Use the code as needed
+
+// Or use issueChallenge with send=false
+$challenge = MFA::issueChallenge(auth()->user(), 'email', false);
+
+// Manual sending
+$channel = MFA::getChannel('email');
+$channel->send(auth()->user(), $challenge->code, ['subject' => 'Custom Subject']);
+```
+
+## Creating a Custom MFA Channel
+
 Steps
 1. Implement `CodingLibs\MFA\Contracts\MfaChannel` with a unique `getName()` and a `send(...)` method
 2. Register your channel during app boot (e.g., in a service provider) via `MFA::registerChannel(...)`
