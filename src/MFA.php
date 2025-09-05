@@ -188,6 +188,38 @@ class MFA
         return QrCodeGenerator::generateBase64Png($otpauth, $size);
     }
 
+    public function generateTotpQrCodeSvg(Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200): ?string
+    {
+        $method = $this->getMethod($user, 'totp');
+        if (! $method || ! $method->secret) {
+            return null;
+        }
+
+        $issuer = $issuer ?: Arr::get($this->config, 'totp.issuer', 'Laravel');
+        $label = $label ?: (method_exists($user, 'getEmailForVerification') ? $user->getEmailForVerification() : ($user->email ?? (string) $user->getAuthIdentifier()));
+        $digits = Arr::get($this->config, 'totp.digits', 6);
+        $period = Arr::get($this->config, 'totp.period', 30);
+
+        $otpauth = GoogleTotp::buildOtpAuthUrl($method->secret, $label, $issuer, $digits, $period);
+        return QrCodeGenerator::generateSvg($otpauth, $size);
+    }
+
+    public function generateTotpQrCodeBase64Svg(Authenticatable $user, ?string $issuer = null, ?string $label = null, int $size = 200): ?string
+    {
+        $method = $this->getMethod($user, 'totp');
+        if (! $method || ! $method->secret) {
+            return null;
+        }
+
+        $issuer = $issuer ?: Arr::get($this->config, 'totp.issuer', 'Laravel');
+        $label = $label ?: (method_exists($user, 'getEmailForVerification') ? $user->getEmailForVerification() : ($user->email ?? (string) $user->getAuthIdentifier()));
+        $digits = Arr::get($this->config, 'totp.digits', 6);
+        $period = Arr::get($this->config, 'totp.period', 30);
+
+        $otpauth = GoogleTotp::buildOtpAuthUrl($method->secret, $label, $issuer, $digits, $period);
+        return QrCodeGenerator::generateBase64Svg($otpauth, $size);
+    }
+
     public function verifyChallenge(Authenticatable $user, string $method, string $code): bool
     {
         $now = Carbon::now();
