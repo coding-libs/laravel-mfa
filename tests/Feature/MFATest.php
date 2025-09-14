@@ -161,4 +161,61 @@ it('remembers device, skips verification with token, and can forget device', fun
 	expect($skipAgain)->toBeFalse();
 });
 
+it('returns only channels enabled by both client and config', function () {
+	$user = new MFATestFakeUser(2001, 'user@example.com');
+	$mfa = app(MFA::class);
+
+	// Initially, no channels should be enabled by client
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->toBeEmpty();
+
+	// Enable email method for the user
+	$mfa->enableMethod($user, 'email');
+	
+	// Now email should be in enabled channels (if config allows it)
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->toHaveKey('email');
+	expect($enabledChannels['email'])->toBeInstanceOf(MfaChannel::class);
+
+	// Enable SMS method for the user
+	$mfa->enableMethod($user, 'sms');
+	
+	// Now both email and sms should be in enabled channels (if config allows them)
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->toHaveKeys(['email', 'sms']);
+	expect($enabledChannels['email'])->toBeInstanceOf(MfaChannel::class);
+	expect($enabledChannels['sms'])->toBeInstanceOf(MfaChannel::class);
+
+	// Disable email method for the user
+	$mfa->disableMethod($user, 'email');
+	
+	// Now only sms should be in enabled channels
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->not->toHaveKey('email');
+	expect($enabledChannels)->toHaveKey('sms');
+	expect($enabledChannels['sms'])->toBeInstanceOf(MfaChannel::class);
+});
+
+it('excludes channels disabled in config even if enabled by client', function () {
+	$user = new MFATestFakeUser(2002, 'user@example.com');
+	
+	// Create MFA instance with custom config where email is disabled
+	$config = config('mfa');
+	$config['email']['enabled'] = false;
+	$mfa = new MFA($config);
+
+	// Enable email method for the user
+	$mfa->enableMethod($user, 'email');
+	
+	// Email should not be in enabled channels because it's disabled in config
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->not->toHaveKey('email');
+	
+	// But SMS should still be there if enabled in config and by client
+	$mfa->enableMethod($user, 'sms');
+	$enabledChannels = $mfa->getEnabledChannels($user);
+	expect($enabledChannels)->toHaveKey('sms');
+	expect($enabledChannels)->not->toHaveKey('email');
+});
+
 

@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool verifyRecoveryCode(\Illuminate\Contracts\Auth\Authenticatable $user, string $code)
  * @method static int getRemainingRecoveryCodesCount(\Illuminate\Contracts\Auth\Authenticatable $user)
  * @method static int clearRecoveryCodes(\Illuminate\Contracts\Auth\Authenticatable $user)
+ * @method static array getEnabledChannels(\Illuminate\Contracts\Auth\Authenticatable $user)
  *
  * @mixin \CodingLibs\MFA\MFA
  * @see \CodingLibs\MFA\MFA

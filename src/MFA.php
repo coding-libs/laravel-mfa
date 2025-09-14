@@ -561,5 +561,46 @@ class MFA
         $algo = (string) Arr::get($this->config, 'recovery.hash_algo', 'sha256');
         return hash($algo, $code);
     }
+
+    /**
+     * Get all channels that are enabled both by the client and by configuration.
+     * 
+     * @param Authenticatable $user The user to check enabled methods for
+     * @return array<string, MfaChannel> Array of channel name => channel instance
+     */
+    public function getEnabledChannels(Authenticatable $user): array
+    {
+        $enabledChannels = [];
+        
+        foreach ($this->registry->all() as $name => $channel) {
+            // Check if channel is enabled in config
+            $configEnabled = $this->isChannelEnabledInConfig($name);
+            
+            // Check if method is enabled by client
+            $clientEnabled = $this->isEnabled($user, $name);
+            
+            if ($configEnabled && $clientEnabled) {
+                $enabledChannels[$name] = $channel;
+            }
+        }
+        
+        return $enabledChannels;
+    }
+
+    /**
+     * Check if a channel is enabled in the configuration.
+     * 
+     * @param string $channelName The channel name to check
+     * @return bool True if the channel is enabled in config
+     */
+    protected function isChannelEnabledInConfig(string $channelName): bool
+    {
+        $channelName = strtolower($channelName);
+        
+        // Check if the channel has an 'enabled' property in config
+        $enabled = Arr::get($this->config, "{$channelName}.enabled", true);
+        
+        return (bool) $enabled;
+    }
 }
 

@@ -5,7 +5,7 @@ return [
     'code_ttl_seconds' => 300,
 
     'email' => [
-        'enabled'      => env('MFA_EMAIL_ENABLED', true),
+        'enabled'      => (bool)env('MFA_EMAIL_ENABLED', true),
         'from_address' => env('MFA_EMAIL_FROM_ADDRESS', env('MAIL_FROM_ADDRESS')),
         'from_name'    => env('MFA_EMAIL_FROM_NAME', env('MAIL_FROM_NAME', 'Laravel')),
         'subject'      => env('MFA_EMAIL_SUBJECT', 'Your verification code'),
@@ -13,7 +13,7 @@ return [
     ],
 
     'sms' => [
-        'enabled' => env('MFA_SMS_ENABLED', true),
+        'enabled' => (bool)env('MFA_SMS_ENABLED', true),
         'driver'  => env('MFA_SMS_DRIVER', 'log'), // log|null
         'from'    => env('MFA_SMS_FROM', ''),
         'channel' => env('MFA_SMS_CHANNEL', \CodingLibs\MFA\Channels\SmsChannel::class),
@@ -27,7 +27,7 @@ return [
     ],
 
     'remember' => [
-        'enabled'       => env('MFA_REMEMBER_ENABLED', true),
+        'enabled'       => (bool)env('MFA_REMEMBER_ENABLED', true),
         'cookie'        => env('MFA_REMEMBER_COOKIE', 'mfa_rd'),
         'lifetime_days' => (int)env('MFA_REMEMBER_LIFETIME_DAYS', 30),
         'path'          => env('MFA_REMEMBER_PATH', '/'),
@@ -38,7 +38,7 @@ return [
     ],
 
     'recovery' => [
-        'enabled'           => env('MFA_RECOVERY_ENABLED', true),
+        'enabled'           => (bool)env('MFA_RECOVERY_ENABLED', true),
         'codes_count'       => (int)env('MFA_RECOVERY_CODES_COUNT', 10),
         'code_length'       => (int)env('MFA_RECOVERY_CODE_LENGTH', 10),
         'regenerate_on_use' => env('MFA_RECOVERY_REGENERATE_ON_USE', false),
