@@ -218,4 +218,55 @@ it('excludes channels disabled in config even if enabled by client', function ()
 	expect($enabledChannels)->not->toHaveKey('email');
 });
 
+it('can check if a channel is enabled in config', function () {
+	$mfa = app(MFA::class);
+
+	// Test with default config (email, sms, and recovery should be enabled)
+	expect($mfa->isChannelEnabledInConfig('email'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('sms'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('recovery'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('totp'))->toBeTrue(); // totp doesn't have enabled config, defaults to true
+
+	// Test with custom config where email is disabled
+	$config = config('mfa');
+	$config['email']['enabled'] = false;
+	$mfa = new MFA($config);
+
+	expect($mfa->isChannelEnabledInConfig('email'))->toBeFalse();
+	expect($mfa->isChannelEnabledInConfig('sms'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('recovery'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('totp'))->toBeTrue();
+
+	// Test with custom config where sms is disabled
+	$config = config('mfa');
+	$config['sms']['enabled'] = false;
+	$mfa = new MFA($config);
+
+	expect($mfa->isChannelEnabledInConfig('email'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('sms'))->toBeFalse();
+	expect($mfa->isChannelEnabledInConfig('recovery'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('totp'))->toBeTrue();
+});
+
+it('can check channel config via facade', function () {
+	// Test via facade (using app() to get the instance)
+	$mfa = app(MFA::class);
+	expect($mfa->isChannelEnabledInConfig('email'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('sms'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('recovery'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('totp'))->toBeTrue();
+});
+
+it('can check recovery codes config when disabled', function () {
+	// Test with custom config where recovery is disabled
+	$config = config('mfa');
+	$config['recovery']['enabled'] = false;
+	$mfa = new MFA($config);
+
+	expect($mfa->isChannelEnabledInConfig('email'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('sms'))->toBeTrue();
+	expect($mfa->isChannelEnabledInConfig('recovery'))->toBeFalse();
+	expect($mfa->isChannelEnabledInConfig('totp'))->toBeTrue();
+});
+
 

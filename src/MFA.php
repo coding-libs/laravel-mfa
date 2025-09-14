@@ -593,7 +593,7 @@ class MFA
      * @param string $channelName The channel name to check
      * @return bool True if the channel is enabled in config
      */
-    protected function isChannelEnabledInConfig(string $channelName): bool
+    public function isChannelEnabledInConfig(string $channelName): bool
     {
         $channelName = strtolower($channelName);
         
