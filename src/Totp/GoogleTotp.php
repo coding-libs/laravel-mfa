@@ -4,10 +4,17 @@ namespace CodingLibs\MFA\Totp;
 
 class GoogleTotp
 {
-    public static function generateSecret(int $length = 20): string
+    public static function generateSecret(int $length = 16): string
     {
-        $randomBytes = random_bytes($length);
-        return rtrim(strtr(base64_encode($randomBytes), '+/', 'AB'), '=');
+        $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $secret = '';
+        $alphabetLength = strlen($alphabet);
+        
+        for ($i = 0; $i < $length; $i++) {
+            $secret .= $alphabet[random_int(0, $alphabetLength - 1)];
+        }
+        
+        return $secret;
     }
 
     public static function buildOtpAuthUrl(string $secret, string $label, string $issuer, int $digits = 6, int $period = 30): string
